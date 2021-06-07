@@ -348,7 +348,6 @@ function GeneratePlotTypes()
 	local maxY = 50;
 	local edgeClear = 7;
 	local polesDist =  4;
-	local 
 
 	for x = 0, maxX - 1 do
 		for y = 0, maxY - 1 do
