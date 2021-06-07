@@ -315,41 +315,44 @@ end
 function GeneratePlotTypes()
 	print("Generating Plot Types (Lua Small Continents) ...");
 
-	-- Fetch Sea Level and World Age user selections.
+	local continent_sizes = 2;
+	local age = Map.GetCustomOption(1)
 	local sea = Map.GetCustomOption(4)
+	local polesIslandChance = 18 -- chance in 1000 that an island will start generating in polar region
+	local maxX = Map.GetCustomOption(11)*2+28; -- get map x size
+	local maxY = Map.GetCustomOption(12)*2+18; -- get map y size
+	local islandMin = 1;
+	local islandMax = 22;
+	local islandSizeDistribution = 22;
+	local islandChance = 27; -- chance in 1000 that an island will start generating
+	local poleClearDist = 8; -- clear all land at this range
+	local polesAddDist =  3; -- add small islands up to this range 
+
+	-- Fetch Sea Level and World Age user selections.
 	if sea == 4 then
 		sea = 1 + Map.Rand(3, "Random Sea Level - Lua");
 	end
-	local age = Map.GetCustomOption(1)
 	if age == 4 then
 		age = 1 + Map.Rand(3, "Random World Age - Lua");
 	end
 
 	local fractal_world = FractalWorld.Create();
-	fractal_world:InitFractal{
-		continent_grain = 3};
+	fractal_world:InitFractal{ continent_grain = continent_sizes};
 
 	local args = {
 		sea_level = sea,
 		world_age = age,
-		sea_level_low = 98,
+		sea_level_low = 75,
 		sea_level_normal = 75,
 		sea_level_high = 80,
-		extra_mountains = 0,
-		adjust_plates = 0,
-		tectonic_islands = false
+		extra_mountains = 8, -- at 0, very few mountains, at 40, ~15% of all land is mountains
+		adjust_plates = 1.3, -- overlapping plates form mountains 0 forms giant mountain regions
+		-- 1.5 pushes them apart a lot
+		tectonic_islands = false -- should we form islands where plates overlap?
 		}
 
-
-	math.randomseed(os.time()); math.random(); math.random();
+	-- generate using primary continent algorithm
 	local plotTypes = fractal_world:GeneratePlotTypes(args);
-
-	local maxX = Map.GetCustomOption(11)*2+28; -- get map x size
-	local maxY = Map.GetCustomOption(12)*2+18; -- get map y size
-	local poleClearDist = 7; -- clear all land at this range
-	local polesAddDist =  4; -- add small islands up to this range 
-	local islandChance = 27; -- chance in 1000 that an island will start generating
-	local polesIslandChance = 15 -- chance in 1000 that an island will start generating in polar region
 
 	-- add random islands
 	for x = 0, maxX - 1 do
@@ -357,7 +360,7 @@ function GeneratePlotTypes()
 			local i = GetI(x,y,maxX);
 			if plotTypes[i] == PlotTypes.PLOT_OCEAN then
 				if math.random(1,1000) <= islandChance then
-					RandomIsland(plotTypes,x,y,maxX,math.random(3,15))
+					RandomIsland(plotTypes,x,y,maxX,LinearRand(islandMin,islandSizeDistribution,islandMax))
 				end
 			end
 		end
@@ -368,12 +371,12 @@ function GeneratePlotTypes()
 	for x = 0, maxX - 1 do
 		for y = 0, maxY - 1 do
 			local i = y * maxX + x + 1;
-			if y < poleClearDist or y > maxY-poleClearDist then
-				plotTypes[i] = PlotTypes.PLOT_OCEAN;
+			if y <= poleClearDist or y >= maxY-poleClearDist then
+				plotTypes[i] = PlotTypes.PLOT_OCEAN; -- clear land
 			end
-			if y < polesAddDist or y > maxY-polesAddDist then
+			if y <= polesAddDist or y >= maxY-polesAddDist then
 				if math.random(1,1000) <= polesIslandChance then
-					RandomIsland(plotTypes,x,y,maxX,math.random(2,5))
+					RandomIsland(plotTypes,x,y,maxX,math.random(2,6))
 				end
 			end
 		end
@@ -388,6 +391,7 @@ end
 -- bouncing positive and negative until numLandTiles is reached
 -- maxX needs to be the width of the map
 -- plotTypes needs to be the linear array of tile types
+------------------------------------------------------------------------------
 function RandomIsland(plotTypes,x,y,maxX,numLandTiles)
 	local remaining = numLandTiles;
 	for d = 0, 10 - 1 do
@@ -410,7 +414,21 @@ function RandomIsland(plotTypes,x,y,maxX,numLandTiles)
 		end
 	end
 end
+-------------------------------------------------
+-- random POSITIVE linear distribution. With args 2,6,5 you'd get a distribution such as
+-- 6,55,444,3333,22222
+-- but then 6 is chopped off because it is greater than c=5
+-------------------------------------------------
+function LinearRand(a,b,c)
+	local start = math.random(a,b); -- [a,b]
 
+	while true do
+		local val = math.random(a,start);
+		if val <= c then
+			return val;
+		end
+	end
+end
 -------------------------------------------------
 -- maps positive integers: 0, 1, 2, 3, 4 etc.
 -- to alternating signed:  0,-1, 1,-2, 2 etc.
@@ -424,6 +442,7 @@ function Switch(offset)
 end
 ------------------------------------------------------------------------------
 -- randomly generates a plot type weighted by (l)and, (h)ills, (m)ountain, (o)cean
+------------------------------------------------------------------------------
 function RandomPlot(l,h,m,o)
 	local rand = math.random(1,l+h+m+o);
 	if rand <= l then                -- first part of probability distribution
@@ -438,6 +457,7 @@ function RandomPlot(l,h,m,o)
 end
 ------------------------------------------------------------------------------
 -- converts an x,y coordinate into an linear index
+------------------------------------------------------------------------------
 function GetI(x,y,maxX)
 	return y * maxX + x + 1;
 end
