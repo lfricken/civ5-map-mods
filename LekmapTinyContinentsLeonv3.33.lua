@@ -322,7 +322,7 @@ function GeneratePlotTypes()
 	local maxX = Map.GetCustomOption(11)*2+28; -- get map x size
 	local maxY = Map.GetCustomOption(12)*2+18; -- get map y size
 	local islandMin = 1;
-	local islandMax = 25;
+	local islandMax = 20;
 	local islandSizeDistribution = 22;
 	local islandChance = 27; -- chance in 1000 that an island will start generating
 	local poleClearDist = 8; -- clear all land at this range
