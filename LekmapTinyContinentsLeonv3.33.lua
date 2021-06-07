@@ -322,7 +322,7 @@ function GeneratePlotTypes()
 	local maxX = Map.GetCustomOption(11)*2+28; -- get map x size
 	local maxY = Map.GetCustomOption(12)*2+18; -- get map y size
 	local islandMin = 1;
-	local islandMax = 22;
+	local islandMax = 25;
 	local islandSizeDistribution = 22;
 	local islandChance = 27; -- chance in 1000 that an island will start generating
 	local poleClearDist = 8; -- clear all land at this range
@@ -345,8 +345,8 @@ function GeneratePlotTypes()
 		sea_level_low = 75,
 		sea_level_normal = 75,
 		sea_level_high = 80,
-		extra_mountains = 8, -- at 0, very few mountains, at 40, ~15% of all land is mountains
-		adjust_plates = 1.3, -- overlapping plates form mountains 0 forms giant mountain regions
+		extra_mountains = 5, -- at 0, very few mountains, at 40, ~15% of all land is mountains
+		adjust_plates = 1.5, -- overlapping plates form mountains 0 forms giant mountain regions
 		-- 1.5 pushes them apart a lot
 		tectonic_islands = false -- should we form islands where plates overlap?
 		}
@@ -360,7 +360,7 @@ function GeneratePlotTypes()
 			local i = GetI(x,y,maxX);
 			if plotTypes[i] == PlotTypes.PLOT_OCEAN then
 				if math.random(1,1000) <= islandChance then
-					RandomIsland(plotTypes,x,y,maxX,LinearRand(islandMin,islandSizeDistribution,islandMax))
+					RandomIsland(plotTypes,x,y,maxX,GenIslandSize(islandMin,islandMax))
 				end
 			end
 		end
@@ -371,8 +371,14 @@ function GeneratePlotTypes()
 	for x = 0, maxX - 1 do
 		for y = 0, maxY - 1 do
 			local i = y * maxX + x + 1;
-			if y <= poleClearDist or y >= maxY-poleClearDist then
+			if y < poleClearDist or y > maxY-poleClearDist then
 				plotTypes[i] = PlotTypes.PLOT_OCEAN; -- clear land
+			end
+			if y == poleClearDist or y == maxY-poleClearDist then
+				if math.random(500,1000) <= 500 then
+					plotTypes[i] = PlotTypes.PLOT_OCEAN; -- make it semi random
+					-- so no one concludes intelligent design
+				end
 			end
 			if y <= polesAddDist or y >= maxY-polesAddDist then
 				if math.random(1,1000) <= polesIslandChance then
@@ -414,6 +420,10 @@ function RandomIsland(plotTypes,x,y,maxX,numLandTiles)
 		end
 	end
 end
+
+function GenIslandSize(min,max)
+	return GeometricRand(min, max, 0.92);
+end
 -------------------------------------------------
 -- random POSITIVE linear distribution. With args 2,6,5 you'd get a distribution such as
 -- 6,55,444,3333,22222
@@ -428,6 +438,22 @@ function LinearRand(a,b,c)
 			return val;
 		end
 	end
+end
+-------------------------------------------------
+-- https://www.wolframalpha.com/input/?i=y%3D0.8%5Ex+from+1+to+10
+-------------------------------------------------
+function GeometricRand(a,b,c)
+	local start = math.random(a,b); -- [a,b]
+	local odds = math.floor(c*1000);
+
+	val = a;
+	while val<b do
+		if math.random(0,1000) >= odds then
+			return val;
+		end
+		val = val + 1;
+	end
+	return b
 end
 -------------------------------------------------
 -- maps positive integers: 0, 1, 2, 3, 4 etc.
