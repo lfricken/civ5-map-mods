@@ -344,17 +344,20 @@ function GeneratePlotTypes()
 	math.randomseed(os.time()); math.random(); math.random();
 	local plotTypes = fractal_world:GeneratePlotTypes(args);
 
-	local maxX = 78;
-	local maxY = 50;
-	local edgeClear = 7;
-	local polesDist =  4;
+	local maxX = Map.GetCustomOption(11)*2+28; -- get map x size
+	local maxY = Map.GetCustomOption(12)*2+18; -- get map y size
+	local poleClearDist = 7; -- clear all land at this range
+	local polesAddDist =  4; -- add small islands up to this range 
+	local islandChance = 27; -- chance in 1000 that an island will start generating
+	local polesIslandChance = 15 -- chance in 1000 that an island will start generating in polar region
 
+	-- add random islands
 	for x = 0, maxX - 1 do
 		for y = 0, maxY - 1 do
 			local i = GetI(x,y,maxX);
 			if plotTypes[i] == PlotTypes.PLOT_OCEAN then
-				if math.random(1,1000) <= 20 then
-					RandomIsland(plotTypes,x,y,maxX,math.random(1,15))
+				if math.random(1,1000) <= islandChance then
+					RandomIsland(plotTypes,x,y,maxX,math.random(3,15))
 				end
 			end
 		end
@@ -365,11 +368,11 @@ function GeneratePlotTypes()
 	for x = 0, maxX - 1 do
 		for y = 0, maxY - 1 do
 			local i = y * maxX + x + 1;
-			if y < edgeClear or y > maxY-edgeClear then
+			if y < poleClearDist or y > maxY-poleClearDist then
 				plotTypes[i] = PlotTypes.PLOT_OCEAN;
 			end
-			if y < polesDist or y > maxY-polesDist then
-				if math.random(1,1000) <= 14 then
+			if y < polesAddDist or y > maxY-polesAddDist then
+				if math.random(1,1000) <= polesIslandChance then
 					RandomIsland(plotTypes,x,y,maxX,math.random(2,5))
 				end
 			end
@@ -389,16 +392,18 @@ function RandomIsland(plotTypes,x,y,maxX,numLandTiles)
 	local remaining = numLandTiles;
 	for d = 0, 10 - 1 do
 		for u = 0, d do
-			local xOff = u;
-			local yOff = d - u;
-			local xOffA=Switch(xOff);
-			local yOffA=Switch(yOff);
+			local xOffA=Switch(u);
+			local yOffA=Switch(d - u);
 			local i = GetI(x+xOffA,y+yOffA,maxX);
-			plotTypes[i] = RandomPlot(40,40,7,20);
-
+			-- don't replace an existing non ocean tile
+			if plotTypes[i] == PlotTypes.PLOT_OCEAN then
+				plotTypes[i] = RandomPlot(40,40,7,24);
+			end
+			-- reduce count if we added/already have a land tile here
 			if plotTypes[i] ~= PlotTypes.PLOT_OCEAN then
 				remaining = remaining - 1;
 			end
+			-- we are done making the island
 			if remaining <= 0 then
 				return;
 			end
