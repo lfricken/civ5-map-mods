@@ -171,27 +171,27 @@ function GetMapScriptInfo()
 					"42",
 					"44",
 					"46",
-					"48",
+					"48", --10
 					"50",
 					"52",
 					"54",
 					"56",
-					"58",
+					"58", --15
 					"60",
 					"62",
 					"64",
 					"66",
-					"68",
+					"68", --20
 					"70",
 					"72",
 					"74",
 					"76",
-					"78",
+					"78", --25
 					"80",
 					"82",
 					"84",
 					"86",
-					"88",
+					"88", --30
 					"90",
 					"92",
 					"94",
@@ -205,7 +205,7 @@ function GetMapScriptInfo()
 					"110",
 				},
 
-				DefaultValue = 17,
+				DefaultValue = 21,
 				SortPriority = -89,
 			},
 
@@ -221,17 +221,17 @@ function GetMapScriptInfo()
 					"32",
 					"34",
 					"36",
-					"38",
+					"38", --10
 					"40",
 					"42",
 					"44",
 					"46",
-					"48",
+					"48", --15
 					"50",
 					"52",
 					"54",
 					"56",
-					"58",
+					"58", --20
 					"60",
 					"62",
 					"64",
@@ -240,7 +240,7 @@ function GetMapScriptInfo()
 					"70",
 					"72",
 					"74",
-					"76",
+					"76", --30
 
 				},
 
@@ -342,11 +342,11 @@ function GeneratePlotTypes()
 	local args = {
 		sea_level = sea,
 		world_age = age,
-		sea_level_low = 75,
+		sea_level_low = 65,
 		sea_level_normal = 75,
-		sea_level_high = 80,
-		extra_mountains = 5, -- at 0, very few mountains, at 40, ~15% of all land is mountains
-		adjust_plates = 1.5, -- overlapping plates form mountains 0 forms giant mountain regions
+		sea_level_high = 85,
+		extra_mountains = 2, -- at 0, very few mountains, at 40, ~15% of all land is mountains
+		adjust_plates = 1.75, -- overlapping plates form mountains 0 forms giant mountain regions
 		-- 1.5 pushes them apart a lot
 		tectonic_islands = false -- should we form islands where plates overlap?
 		}
