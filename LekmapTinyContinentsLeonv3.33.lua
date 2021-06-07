@@ -347,28 +347,31 @@ function GeneratePlotTypes()
 	local maxX = 78;
 	local maxY = 50;
 	local edgeClear = 7;
-	local arctic =  4;
+	local polesDist =  4;
+	local 
 
 	for x = 0, maxX - 1 do
 		for y = 0, maxY - 1 do
 			local i = GetI(x,y,maxX);
 			if plotTypes[i] == PlotTypes.PLOT_OCEAN then
 				if math.random(1,1000) <= 20 then
-					RandomIsland(plotTypes,x,y,maxX,math.rand(1,15))
+					RandomIsland(plotTypes,x,y,maxX,math.random(1,15))
 				end
 			end
 		end
 	end
 
+	-- remove near poles
+	-- re add small stuff near poles 
 	for x = 0, maxX - 1 do
 		for y = 0, maxY - 1 do
 			local i = y * maxX + x + 1;
 			if y < edgeClear or y > maxY-edgeClear then
 				plotTypes[i] = PlotTypes.PLOT_OCEAN;
 			end
-			if y < arctic or y > maxY-arctic then
-				if math.random(1,1000) <= 10 then
-					RandomIsland(plotTypes,x,y,maxX,math.random(3,4))
+			if y < polesDist or y > maxY-polesDist then
+				if math.random(1,1000) <= 14 then
+					RandomIsland(plotTypes,x,y,maxX,math.random(2,5))
 				end
 			end
 		end
@@ -379,8 +382,12 @@ function GeneratePlotTypes()
 	GenerateCoasts(args);
 end
 ------------------------------------------------------------------------------
-function RandomIsland(plotTypes,x,y,maxX,size)
-	local remaining = size;
+-- creates a random island starting with x,y and going around that point 
+-- bouncing positive and negative until numLandTiles is reached
+-- maxX needs to be the width of the map
+-- plotTypes needs to be the linear array of tile types
+function RandomIsland(plotTypes,x,y,maxX,numLandTiles)
+	local remaining = numLandTiles;
 	for d = 0, 10 - 1 do
 		for u = 0, d do
 			local xOff = u;
@@ -388,7 +395,7 @@ function RandomIsland(plotTypes,x,y,maxX,size)
 			local xOffA=Switch(xOff);
 			local yOffA=Switch(yOff);
 			local i = GetI(x+xOffA,y+yOffA,maxX);
-			plotTypes[i] = RandomPlot(40,40,7,0);
+			plotTypes[i] = RandomPlot(40,40,7,20);
 
 			if plotTypes[i] ~= PlotTypes.PLOT_OCEAN then
 				remaining = remaining - 1;
@@ -405,18 +412,19 @@ end
 -- to alternating signed:  0,-1, 1,-2, 2 etc.
 -------------------------------------------------
 function Switch(offset)
-	if (offset%2 == 0) then
+	if (offset % 2 == 0) then -- is even number
 		return offset/2;
-	else
+	else                      -- is odd number
 		return (1+offset)/-2
 	end
 end
 ------------------------------------------------------------------------------
+-- randomly generates a plot type weighted by (l)and, (h)ills, (m)ountain, (o)cean
 function RandomPlot(l,h,m,o)
 	local rand = math.random(1,l+h+m+o);
-	if rand <= l then
+	if rand <= l then                -- first part of probability distribution
 		return PlotTypes.PLOT_LAND
-	elseif rand <= l+h then
+	elseif rand <= l+h then          -- second part
 		return PlotTypes.PLOT_HILLS
 	elseif rand <= l+h+m then
 		return PlotTypes.PLOT_MOUNTAIN
@@ -425,6 +433,7 @@ function RandomPlot(l,h,m,o)
 	end
 end
 ------------------------------------------------------------------------------
+-- converts an x,y coordinate into an linear index
 function GetI(x,y,maxX)
 	return y * maxX + x + 1;
 end
