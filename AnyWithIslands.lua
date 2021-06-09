@@ -18,8 +18,8 @@ include("MultilayeredFractal");
 function GetMapScriptInfo()
 	local world_age, temperature, rainfall, sea_level, resources = GetCoreMapOptions()
 	return {
-		Name = "Leon: Tiny Continents (v3.33)",
-		Description = "A map script made for Lekmod based of HB's Mapscript v8.1. Small Continents",
+		Name = "Any with Islands",
+		Description = "Generates a standard continents map with sporadic islands. Also clears waterways near the poles.",
 		IsAdvancedMap = false,
 		IconIndex = 1,
 		SortIndex = 2,
@@ -275,7 +275,109 @@ function GetMapScriptInfo()
 				},
 
 				DefaultValue = 1,
-				SortPriority = -90,
+				SortPriority = -85,
+			},
+
+			{
+				Name = "Continent Type",	-- add setting for removing OP luxes from regional pool (15)
+				Values = {
+					"Pangea",
+					"Continents",
+					"Small Continents",
+					"Fractal",
+					"Fractal Super",
+				},
+
+				DefaultValue = 2,
+				SortPriority = -75,
+			},
+
+			{
+				Name = "Less Polar Land",	-- add setting for removing OP luxes from regional pool (16)
+				Values = {
+					"Yes",
+					"No",
+				},
+
+				DefaultValue = 1,
+				SortPriority = -70,
+			},
+
+			{
+				Name = "Islands Per 1000",	-- odds of generating an island (17)
+				Values = {
+					"0",
+					"2",
+					"4",
+					"6",
+					"8",
+					"10",
+					"12",
+					"14",
+					"16",
+					"18",
+					"20",
+					"22",
+					"24",
+					"26",
+					"28",
+					"30",
+					"32", --16
+					"34",
+					"36",
+					"38",
+					"40",
+					"42",
+					"44",
+					"46",
+					"48",
+					"50",
+				},
+
+				DefaultValue = 16,
+				SortPriority = -65,
+			},
+
+			{
+				Name = "Island Max Size",	-- (18)
+				Values = {
+					"1",
+					"3",
+					"5",
+					"7",
+					"9",
+					"11",
+					"13",
+					"15",
+					"17",
+					"19",
+					"21", --11
+					"23",
+					"25",
+					"27",
+					"29",
+				},
+
+				DefaultValue = 11,
+				SortPriority = -60,
+			},
+
+			{
+				Name = "Size Odds Exponent",--  (19)
+				Values = {
+					"(0.50^Size)%",
+					"(0.75^Size)%",
+					"(0.82^Size)%", -- 3
+					"(0.86^Size)%",
+					"(0.88^Size)%", -- 5
+					"(0.90^Size)%",
+					"(0.91^Size)%",
+					"(0.92^Size)%",
+					"(0.93^Size)%",
+				},
+
+				DefaultValue = 3,
+				SortPriority = -55,
 			},
 		},
 	};
@@ -310,23 +412,53 @@ function GetMapInitData(worldSize)
 	end
 
 end
+function GetSizeExponent()
+	local choice = Map.GetCustomOption(19);
+	if choice == 1 then
+		return 0.5;
+	end
+	if choice == 2 then
+		return 0.75;
+	end
+	if choice == 3 then
+		return 0.82;
+	end
+	if choice == 4 then
+		return 0.86;
+	end
+	if choice == 5 then
+		return 0.88;
+	end
+	if choice == 6 then
+		return 0.90;
+	end
+	if choice == 7 then
+		return 0.91;
+	end
+	if choice == 8 then
+		return 0.92;
+	end
+	if choice == 9 then
+		return 0.93;
+	end
+end
 ------------------------------------------------------------------------------
 ------------------------------------------------------------------------------
 function GeneratePlotTypes()
 	print("Generating Plot Types (Lua Small Continents) ...");
 
-	local continent_sizes = 2;
+	local inverse_continent_sizes = Map.GetCustomOption(15); -- 1 means pangea, 2 means continents, 3, means small cont, etc.
 	local age = Map.GetCustomOption(1)
 	local sea = Map.GetCustomOption(4)
-	local polesIslandChance = 18 -- chance in 1000 that an island will start generating in polar region
 	local maxX = Map.GetCustomOption(11)*2+28; -- get map x size
 	local maxY = Map.GetCustomOption(12)*2+18; -- get map y size
-	local islandMin = 1;
-	local islandMax = 20;
-	local islandSizeDistribution = 22;
-	local islandChance = 27; -- chance in 1000 that an island will start generating
-	local poleClearDist = 8; -- clear all land at this range
+	local islandSizeMin = 1;
+	local islandSizeMax = Map.GetCustomOption(18)*2-1;
+	local islandChance = Map.GetCustomOption(17)*2; -- chance in 1000 that an island will start generating (Standard size does 4000 checks)
+	local polesIslandChance = islandChance / 2; -- chance in 1000 that an island will start generating in polar region
+	local poleClearDist = 6; -- clear all land at this range
 	local polesAddDist =  3; -- add small islands up to this range 
+	local geometricReduction = GetSizeExponent();
 
 	-- Fetch Sea Level and World Age user selections.
 	if sea == 4 then
@@ -337,16 +469,16 @@ function GeneratePlotTypes()
 	end
 
 	local fractal_world = FractalWorld.Create();
-	fractal_world:InitFractal{ continent_grain = continent_sizes};
+	fractal_world:InitFractal{ continent_grain = inverse_continent_sizes};
 
 	local args = {
 		sea_level = sea,
 		world_age = age,
-		sea_level_low = 65,
-		sea_level_normal = 75,
-		sea_level_high = 85,
-		extra_mountains = 2, -- at 0, very few mountains, at 40, ~15% of all land is mountains
-		adjust_plates = 1.75, -- overlapping plates form mountains 0 forms giant mountain regions
+		sea_level_low = 67,
+		sea_level_normal = 77,
+		sea_level_high = 87,
+		extra_mountains = 5, -- at 0, very few mountains, at 40, ~15% of all land is mountains
+		adjust_plates = 1.65, -- overlapping plates form mountains 0 forms giant mountain regions
 		-- 1.5 pushes them apart a lot
 		tectonic_islands = false -- should we form islands where plates overlap?
 		}
@@ -360,7 +492,7 @@ function GeneratePlotTypes()
 			local i = GetI(x,y,maxX);
 			if plotTypes[i] == PlotTypes.PLOT_OCEAN then
 				if math.random(1,1000) <= islandChance then
-					RandomIsland(plotTypes,x,y,maxX,GenIslandSize(islandMin,islandMax))
+					RandomIsland(plotTypes,x,y,maxX,GenIslandSize(islandSizeMin,islandSizeMax,geometricReduction))
 				end
 			end
 		end
@@ -368,21 +500,23 @@ function GeneratePlotTypes()
 
 	-- remove near poles
 	-- re add small stuff near poles 
-	for x = 0, maxX - 1 do
-		for y = 0, maxY - 1 do
-			local i = y * maxX + x + 1;
-			if y < poleClearDist or y > maxY-poleClearDist then
-				plotTypes[i] = PlotTypes.PLOT_OCEAN; -- clear land
-			end
-			if y == poleClearDist or y == maxY-poleClearDist then
-				if math.random(500,1000) <= 500 then
-					plotTypes[i] = PlotTypes.PLOT_OCEAN; -- make it semi random
-					-- so no one concludes intelligent design
+	if Map.GetCustomOption(16)==1 then
+		for x = 0, maxX - 1 do
+			for y = 0, maxY - 1 do
+				local i = y * maxX + x + 1;
+				if y < poleClearDist or y > maxY-poleClearDist then
+					plotTypes[i] = PlotTypes.PLOT_OCEAN; -- clear land
 				end
-			end
-			if y <= polesAddDist or y >= maxY-polesAddDist then
-				if math.random(1,1000) <= polesIslandChance then
-					RandomIsland(plotTypes,x,y,maxX,math.random(2,6))
+				if y == poleClearDist or y == maxY-poleClearDist then
+					if math.random(0,1000) <= 500 then
+						plotTypes[i] = PlotTypes.PLOT_OCEAN; -- make it semi random
+						-- so no one concludes intelligent design
+					end
+				end
+				if y <= polesAddDist or y >= maxY-polesAddDist then
+					if math.random(1,1000) <= polesIslandChance then
+						RandomIsland(plotTypes,x,y,maxX,math.random(2,6))
+					end
 				end
 			end
 		end
@@ -400,14 +534,18 @@ end
 ------------------------------------------------------------------------------
 function RandomIsland(plotTypes,x,y,maxX,numLandTiles)
 	local remaining = numLandTiles;
-	for d = 0, 10 - 1 do
+	local start = GetI(x,y,maxX);
+	if plotTypes[start] == PlotTypes.PLOT_OCEAN then
+		plotTypes[start] = RandomPlot(40,40,0,0);
+	end
+	for d = 1, 15 do -- (start with 1 since we already did 0)
 		for u = 0, d do
 			local xOffA=Switch(u);
 			local yOffA=Switch(d - u);
 			local i = GetI(x+xOffA,y+yOffA,maxX);
 			-- don't replace an existing non ocean tile
 			if plotTypes[i] == PlotTypes.PLOT_OCEAN then
-				plotTypes[i] = RandomPlot(40,40,7,24);
+				plotTypes[i] = RandomPlot(40,40,7,20);
 			end
 			-- reduce count if we added/already have a land tile here
 			if plotTypes[i] ~= PlotTypes.PLOT_OCEAN then
@@ -421,8 +559,8 @@ function RandomIsland(plotTypes,x,y,maxX,numLandTiles)
 	end
 end
 
-function GenIslandSize(min,max)
-	return GeometricRand(min, max, 0.92);
+function GenIslandSize(min,max,c)
+	return GeometricRand(min, max, c);
 end
 -------------------------------------------------
 -- random POSITIVE linear distribution. With args 2,6,5 you'd get a distribution such as
