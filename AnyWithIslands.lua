@@ -564,7 +564,7 @@ function RandomIsland(plotTypes,x,y,maxX,numLandTiles)
 	local remaining = numLandTiles;
 	local start = GetI(x,y,maxX);
 	if plotTypes[start] == PlotTypes.PLOT_OCEAN then
-		plotTypes[start] = RandomPlot(40,40,5*numLandTiles-5,0);
+		plotTypes[start] = RandomPlot(40,40,8*numLandTiles-8,0);
 	end
 	for d = 1, 15 do -- (start with 1 since we already did 0)
 		for u = 0, d do
@@ -573,7 +573,7 @@ function RandomIsland(plotTypes,x,y,maxX,numLandTiles)
 			local i = GetI(x+xOffA,y+yOffA,maxX);
 			-- don't replace an existing non ocean tile
 			if plotTypes[i] == PlotTypes.PLOT_OCEAN then
-				plotTypes[i] = RandomPlot(40,40,14,20);
+				plotTypes[i] = RandomPlot(40,40,18,20);
 			end
 			-- reduce count if we added/already have a land tile here
 			if plotTypes[i] ~= PlotTypes.PLOT_OCEAN then
