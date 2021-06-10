@@ -35,7 +35,7 @@ function GetMapScriptInfo()
 					"TXT_KEY_MAP_OPTION_RANDOM",
 				},
 				DefaultValue = 2,
-				SortPriority = -99,
+				SortPriority = -200,
 			},
 
 			{
@@ -47,7 +47,7 @@ function GetMapScriptInfo()
 					"TXT_KEY_MAP_OPTION_RANDOM",
 				},
 				DefaultValue = 2,
-				SortPriority = -98,
+				SortPriority = -180,
 			},
 
 			{
@@ -59,7 +59,7 @@ function GetMapScriptInfo()
 					"TXT_KEY_MAP_OPTION_RANDOM",
 				},
 				DefaultValue = 2,
-				SortPriority = -97,
+				SortPriority = -170,
 			},
 
 			{
@@ -90,7 +90,7 @@ function GetMapScriptInfo()
 				},
 
 				DefaultValue = 14,
-				SortPriority = -50,
+				SortPriority = -160,
 			},
 
 			{
@@ -382,8 +382,22 @@ function GetMapScriptInfo()
 			},
 
 			{
-				Name = "Size Odds Exponent",--  (19)
+				Name = "Sea Level Modifier",	-- (19)
 				Values = {
+					"-1",
+					" 0",
+					"+1",
+				},
+
+				DefaultValue = 2,
+				SortPriority = -155,
+			},
+
+			{
+				Name = "Size Odds Exponent",--  (20)
+				Values = {
+					"(0.30^Size)%",
+					"(0.40^Size)%",
 					"(0.50^Size)%",
 					"(0.75^Size)%",
 					"(0.82^Size)%", -- 3
@@ -393,6 +407,7 @@ function GetMapScriptInfo()
 					"(0.91^Size)%",
 					"(0.92^Size)%",
 					"(0.93^Size)%",
+					"(0.99^Size)%",
 				},
 
 				DefaultValue = 3,
@@ -401,6 +416,28 @@ function GetMapScriptInfo()
 		},
 	};
 end
+
+------------------------------------------------------------------------------
+function GetSizeExponent()
+	local choice = Map.GetCustomOption(20);
+	local vals = {
+		0.30,
+		0.40,
+		0.50,
+		0.75,
+		0.82,
+		0.86,
+		0.88,
+		0.90,
+		0.91,
+		0.92,
+		0.93,
+		0.99
+	};
+
+	return vals[choice];
+end
+
 ------------------------------------------------------------------------------
 function GetMapInitData(worldSize)
 	
@@ -433,40 +470,8 @@ function GetMapInitData(worldSize)
 end
 
 ------------------------------------------------------------------------------
-function GetSizeExponent()
-	local choice = Map.GetCustomOption(19);
-	if choice == 1 then
-		return 0.5;
-	end
-	if choice == 2 then
-		return 0.75;
-	end
-	if choice == 3 then
-		return 0.82;
-	end
-	if choice == 4 then
-		return 0.86;
-	end
-	if choice == 5 then
-		return 0.88;
-	end
-	if choice == 6 then
-		return 0.90;
-	end
-	if choice == 7 then
-		return 0.91;
-	end
-	if choice == 8 then
-		return 0.92;
-	end
-	if choice == 9 then
-		return 0.93;
-	end
-end
-
-------------------------------------------------------------------------------
 function GetSeaLevel()
-	local choice = Map.GetCustomOption(4)*2 + 48;
+	local choice = Map.GetCustomOption(4)*2 + 48 + (Map.GetCustomOption(19)-2);
 end
 
 ------------------------------------------------------------------------------
@@ -482,7 +487,7 @@ function GeneratePlotTypes()
 	local islandSizeMax = Map.GetCustomOption(18)*2-1;
 	local islandChance = Map.GetCustomOption(17)*2; -- chance in 1000 that an island will start generating (Standard size does 4000 checks)
 	local polesIslandChance = islandChance / 2; -- chance in 1000 that an island will start generating in polar region
-	local poleClearDist = 6; -- clear all land at this range
+	local poleClearDist = 7; -- clear all land at this range
 	local polesAddDist =  3; -- add small islands up to this range 
 	local geometricReduction = GetSizeExponent();
 
@@ -559,7 +564,7 @@ function RandomIsland(plotTypes,x,y,maxX,numLandTiles)
 	local remaining = numLandTiles;
 	local start = GetI(x,y,maxX);
 	if plotTypes[start] == PlotTypes.PLOT_OCEAN then
-		plotTypes[start] = RandomPlot(40,40,0,0);
+		plotTypes[start] = RandomPlot(40,40,5*numLandTiles-5,0);
 	end
 	for d = 1, 15 do -- (start with 1 since we already did 0)
 		for u = 0, d do
@@ -568,7 +573,7 @@ function RandomIsland(plotTypes,x,y,maxX,numLandTiles)
 			local i = GetI(x+xOffA,y+yOffA,maxX);
 			-- don't replace an existing non ocean tile
 			if plotTypes[i] == PlotTypes.PLOT_OCEAN then
-				plotTypes[i] = RandomPlot(40,40,7,20);
+				plotTypes[i] = RandomPlot(40,40,14,20);
 			end
 			-- reduce count if we added/already have a land tile here
 			if plotTypes[i] ~= PlotTypes.PLOT_OCEAN then
@@ -674,7 +679,7 @@ function AddFeatures()
 	local featuregen = FeatureGenerator.Create(args);
 
 	-- False parameter removes mountains from coastlines.
-	featuregen:AddFeatures(true);
+	featuregen:AddFeatures(false);
 end
 ------------------------------------------------------------------------------
 
