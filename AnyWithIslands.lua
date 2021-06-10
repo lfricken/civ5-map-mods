@@ -63,15 +63,34 @@ function GetMapScriptInfo()
 			},
 
 			{
-				Name = "TXT_KEY_MAP_OPTION_SEA_LEVEL",	-- 4 add sea level defaults to random.
+				Name = "Exact Sea Level",--  (4)
 				Values = {
-					"TXT_KEY_MAP_OPTION_LOW",
-					"TXT_KEY_MAP_OPTION_MEDIUM",
-					"TXT_KEY_MAP_OPTION_HIGH",
-					"TXT_KEY_MAP_OPTION_RANDOM",
+					"50", -- 1
+					"52",
+					"54",
+					"56",
+					"58", --5
+					"60",
+					"62",
+					"64",
+					"66 (Low)",
+					"68", --10
+					"70",
+					"72",
+					"74",
+					"76 (Medium)", --14
+					"78", --15
+					"80",
+					"82",
+					"84", --30
+					"86 (High)",
+					"88",
+					"90",
+					"92", --30
 				},
-				DefaultValue = 2,
-				SortPriority = -96,
+
+				DefaultValue = 14,
+				SortPriority = -50,
 			},
 
 			{
@@ -412,6 +431,8 @@ function GetMapInitData(worldSize)
 	end
 
 end
+
+------------------------------------------------------------------------------
 function GetSizeExponent()
 	local choice = Map.GetCustomOption(19);
 	if choice == 1 then
@@ -442,7 +463,12 @@ function GetSizeExponent()
 		return 0.93;
 	end
 end
+
 ------------------------------------------------------------------------------
+function GetSeaLevel()
+	local choice = Map.GetCustomOption(4)*2 + 48;
+end
+
 ------------------------------------------------------------------------------
 function GeneratePlotTypes()
 	print("Generating Plot Types (Lua Small Continents) ...");
@@ -461,9 +487,6 @@ function GeneratePlotTypes()
 	local geometricReduction = GetSizeExponent();
 
 	-- Fetch Sea Level and World Age user selections.
-	if sea == 4 then
-		sea = 1 + Map.Rand(3, "Random Sea Level - Lua");
-	end
 	if age == 4 then
 		age = 1 + Map.Rand(3, "Random World Age - Lua");
 	end
@@ -472,11 +495,11 @@ function GeneratePlotTypes()
 	fractal_world:InitFractal{ continent_grain = inverse_continent_sizes};
 
 	local args = {
-		sea_level = sea,
+		sea_level = 1,
 		world_age = age,
-		sea_level_low = 67,
-		sea_level_normal = 77,
-		sea_level_high = 87,
+		sea_level_low = GetSeaLevel(),
+		sea_level_normal = 75,
+		sea_level_high = 85,
 		extra_mountains = 5, -- at 0, very few mountains, at 40, ~15% of all land is mountains
 		adjust_plates = 1.65, -- overlapping plates form mountains 0 forms giant mountain regions
 		-- 1.5 pushes them apart a lot
@@ -491,7 +514,7 @@ function GeneratePlotTypes()
 		for y = 0, maxY - 1 do
 			local i = GetI(x,y,maxX);
 			if plotTypes[i] == PlotTypes.PLOT_OCEAN then
-				if math.random(1,1000) <= islandChance then
+				if Map.Rand(1000, "Island Chance") < islandChance then
 					RandomIsland(plotTypes,x,y,maxX,GenIslandSize(islandSizeMin,islandSizeMax,geometricReduction))
 				end
 			end
@@ -508,14 +531,14 @@ function GeneratePlotTypes()
 					plotTypes[i] = PlotTypes.PLOT_OCEAN; -- clear land
 				end
 				if y == poleClearDist or y == maxY-poleClearDist then
-					if math.random(0,1000) <= 500 then
+					if Map.Rand(1000, "Pole Clear Chance") < 500 then
 						plotTypes[i] = PlotTypes.PLOT_OCEAN; -- make it semi random
 						-- so no one concludes intelligent design
 					end
 				end
 				if y <= polesAddDist or y >= maxY-polesAddDist then
-					if math.random(1,1000) <= polesIslandChance then
-						RandomIsland(plotTypes,x,y,maxX,math.random(2,6))
+					if Map.Rand(1000, "Pole Island Chance") < polesIslandChance then
+						RandomIsland(plotTypes,x,y,maxX,Map.Rand(6, "Pole Size")+1)
 					end
 				end
 			end
@@ -563,30 +586,15 @@ function GenIslandSize(min,max,c)
 	return GeometricRand(min, max, c);
 end
 -------------------------------------------------
--- random POSITIVE linear distribution. With args 2,6,5 you'd get a distribution such as
--- 6,55,444,3333,22222
--- but then 6 is chopped off because it is greater than c=5
--------------------------------------------------
-function LinearRand(a,b,c)
-	local start = math.random(a,b); -- [a,b]
-
-	while true do
-		local val = math.random(a,start);
-		if val <= c then
-			return val;
-		end
-	end
-end
--------------------------------------------------
 -- https://www.wolframalpha.com/input/?i=y%3D0.8%5Ex+from+1+to+10
 -------------------------------------------------
 function GeometricRand(a,b,c)
-	local start = math.random(a,b); -- [a,b]
 	local odds = math.floor(c*1000);
 
 	val = a;
 	while val<b do
-		if math.random(0,1000) >= odds then
+		-- return [0,x-1] -- so a 99% chance should be possible
+		if Map.Rand(1000, "Geometric Random") >= odds then
 			return val;
 		end
 		val = val + 1;
@@ -608,12 +616,12 @@ end
 -- randomly generates a plot type weighted by (l)and, (h)ills, (m)ountain, (o)cean
 ------------------------------------------------------------------------------
 function RandomPlot(l,h,m,o)
-	local rand = math.random(1,l+h+m+o);
-	if rand <= l then                -- first part of probability distribution
+	local rand = Map.Rand(l+h+m+o, "Random Plot");
+	if rand < l then                -- first part of probability distribution
 		return PlotTypes.PLOT_LAND
-	elseif rand <= l+h then          -- second part
+	elseif rand < l+h then          -- second part
 		return PlotTypes.PLOT_HILLS
-	elseif rand <= l+h+m then
+	elseif rand < l+h+m then
 		return PlotTypes.PLOT_MOUNTAIN
 	else
 		return PlotTypes.PLOT_OCEAN
