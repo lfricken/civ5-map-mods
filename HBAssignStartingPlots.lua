@@ -68,6 +68,7 @@ AssignStartingPlots = {};
 
 ------------------------------------------------------------------------------
 function AssignStartingPlots.Create()
+	print("leon assign starting plots")
 	-- There are three methods of dividing the map in to regions.
 	-- OneLandmass, Continents, Oceanic. Default method is Continents.
 	--
