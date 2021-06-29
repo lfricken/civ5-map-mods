@@ -369,14 +369,14 @@ function FeatureGenerator:AddAtolls()
 		for x = 0, iW - 1 do
 			local i = y * iW + x + 1; -- Lua tables/lists/arrays start at 1, not 0 like C++ or Python
 			local plot = Map.GetPlot(x, y)
+
 			local plotType = plot:GetPlotType()
-			if plotType == PlotTypes.PLOT_OCEAN then
-				local featureType = plot:GetFeatureType()
-				if featureType ~= FeatureTypes.FEATURE_ICE then
-					if not plot:IsLake() then
-						local terrainType = plot:GetTerrainType()
-						if terrainType == TerrainTypes.TERRAIN_COAST then
-							if plot:IsAdjacentToLand() then
+			if PlotTypes.PLOT_OCEAN ~= plot:GetPlotType() then do break end end
+				if FeatureTypes.FEATURE_ICE == plot:GetFeatureType() then do break end end
+				if plot:IsLake() then do break end end
+				-- must be coast
+						if plot:GetTerrainType() ~= TerrainTypes.TERRAIN_COAST then do break end end
+							if not plot:IsAdjacentToLand() then do break end end
 								-- Check all adjacent plots and identify adjacent landmasses.
 								local iNumLandAdjacent, biggest_adj_area = 0, 0;
 								local bPlotValid = true;
@@ -424,11 +424,6 @@ function FeatureGenerator:AddAtolls()
 										--print("** Area Plot Count =", biggest_adj_area);
 									end
 								end
-							end
-						end
-					end
-				end
-			end
 		end
 	end
 	local alpha_list = GetShuffledCopyOfTable(temp_alpha_list)
