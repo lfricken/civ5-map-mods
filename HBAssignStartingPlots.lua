@@ -6783,7 +6783,7 @@ function AssignStartingPlots:CanBeThisNaturalWonderType(x, y, wn, rn)
 			-- Continue
 		elseif featureType == FeatureTypes.FEATURE_ICE and self.CoreTileCanBeIce[wn] == true then
 			-- Continue
-		elseif featureType == self.feature_atoll and self.CoreTileCanBeAtoll[wn] == true then
+		elseif contains(self.feature_atoll, featureType) and self.CoreTileCanBeAtoll[wn] == true then
 			-- Continue
 		else -- Feature type does not match an eligible type, reject this plot.
 			return
@@ -6982,7 +6982,7 @@ function AssignStartingPlots:CanBeThisNaturalWonderType(x, y, wn, rn)
 				iNumMarsh = iNumMarsh + 1;
 			elseif featureType == FeatureTypes.FEATURE_ICE then
 				iNumIce = iNumIce + 1;
-			elseif featureType == self.feature_atoll then
+			elseif contains(self.feature_atoll, featureType) then
 				iNumAtoll = iNumAtoll + 1;
 			end
 		end
@@ -7212,14 +7212,21 @@ function AssignStartingPlots:GenerateLocalVersionsOfDataFromXML()
 	end
 end
 ------------------------------------------------------------------------------
+function contains(set, key)
+	return set[key] ~= nil;
+end
+------------------------------------------------------------------------------
 function AssignStartingPlots:GenerateNaturalWondersCandidatePlotLists()
 	-- This function scans the map for eligible sites for all "Natural Wonders" Features.
 	local iW, iH = Map.GetGridSize();
 	-- Set up Atolls ID.
+	self.feature_atoll = {};
 	for thisFeature in GameInfo.Features() do
-		if thisFeature.Type == "FEATURE_ATOLL" then
-			self.feature_atoll = thisFeature.ID;
-		end
+		if thisFeature.Type == "FEATURE_ATOLL" then self.feature_atoll[thisFeature.ID] = 0 end
+		if thisFeature.Type == "FEATURE_ATOLL_GOLD" then self.feature_atoll[thisFeature.ID] = 0 end
+		if thisFeature.Type == "FEATURE_ATOLL_PRODUCTION" then self.feature_atoll[thisFeature.ID] = 0 end
+		if thisFeature.Type == "FEATURE_ATOLL_CULTURE" then self.feature_atoll[thisFeature.ID] = 0 end
+		if thisFeature.Type == "FEATURE_ATOLL_SCIENCE" then self.feature_atoll[thisFeature.ID] = 0 end
 	end
 	-- Set up Landmass check for wonders that avoid the biggest landmass when the world has oceans.
 	local biggest_landmass = Map.FindBiggestArea(false)
@@ -8721,7 +8728,7 @@ function AssignStartingPlots:GenerateGlobalResourcePlotLists()
 				if plotType == PlotTypes.PLOT_MOUNTAIN then
 					self.barren_plots = self.barren_plots + 1;
 				elseif plotType == PlotTypes.PLOT_OCEAN then
-					if featureType ~= self.feature_atoll then
+					if not contains(self.feature_atoll, featureType) then
 						if featureType == FeatureTypes.FEATURE_ICE then
 							self.barren_plots = self.barren_plots + 1;
 						elseif plot:IsLake() then
@@ -9935,7 +9942,7 @@ function AssignStartingPlots:GetListOfAllowableLuxuriesAtCitySite(x, y, radius, 
 						if plotType == PlotTypes.PLOT_OCEAN then -- Testing for Water Luxury eligibility. This is more involved than land-based.
 							if terrainType == TerrainTypes.TERRAIN_COAST then
 								if plot:IsLake() == false then
-									if featureType ~= self.feature_atoll and featureType ~= FeatureTypes.FEATURE_ICE and loc_is_coastal == true then
+									if not contains(self.feature_atoll, featureType) and featureType ~= FeatureTypes.FEATURE_ICE and loc_is_coastal == true then
 										allowed_luxuries[self.whale_ID] = true
 										allowed_luxuries[self.pearls_ID] = true
 										allowed_luxuries[self.crab_ID] = true
@@ -10150,7 +10157,7 @@ function AssignStartingPlots:GenerateLuxuryPlotListsAtCitySite(x, y, radius, bRe
 							if plotType == PlotTypes.PLOT_OCEAN then
 								if terrainType == TerrainTypes.TERRAIN_COAST then
 									if plot:IsLake() == false then
-										if featureType ~= self.feature_atoll and featureType ~= FeatureTypes.FEATURE_ICE then
+										if not contains(self.feature_atoll, featureType) and featureType ~= FeatureTypes.FEATURE_ICE then
 											table.insert(region_coast, plotIndex);
 										end
 									end
@@ -10366,7 +10373,7 @@ function AssignStartingPlots:GenerateLuxuryPlotListsInRegion(region_number)
 			if plotType == PlotTypes.PLOT_OCEAN then
 				if terrainType == TerrainTypes.TERRAIN_COAST then
 					if plot:IsLake() == false then
-						if featureType ~= self.feature_atoll and featureType ~= FeatureTypes.FEATURE_ICE then
+						if not contains(self.feature_atoll, featureType) and featureType ~= FeatureTypes.FEATURE_ICE then
 							if iAreaID == -1 then
 								if plot:IsAdjacentToLand() then
 									table.insert(region_coast, plotIndex);
@@ -12097,7 +12104,7 @@ function AssignStartingPlots:GetListOfAllowableLuxuriesNearCitySite(x, y, radius
 					if plotType == PlotTypes.PLOT_OCEAN then -- Testing for Water Luxury eligibility. This is more involved than land-based.
 						if terrainType == TerrainTypes.TERRAIN_COAST then
 							if plot:IsLake() == false then
-								if featureType ~= self.feature_atoll and featureType ~= FeatureTypes.FEATURE_ICE and loc_is_coastal == true then
+								if not contains(self.feature_atoll, featureType) and featureType ~= FeatureTypes.FEATURE_ICE and loc_is_coastal == true then
 									allowed_luxuries[self.whale_ID] = true;
 									allowed_luxuries[self.pearls_ID] = true;
 									allowed_luxuries[self.crab_ID] = true;
@@ -12273,7 +12280,7 @@ function AssignStartingPlots:GenerateLuxuryPlotListsNearCitySite(x, y, radius, b
 						if plotType == PlotTypes.PLOT_OCEAN then
 							if terrainType == TerrainTypes.TERRAIN_COAST then
 								if plot:IsLake() == false then
-									if featureType ~= self.feature_atoll and featureType ~= FeatureTypes.FEATURE_ICE then
+									if not contains(self.feature_atoll, featureType) and featureType ~= FeatureTypes.FEATURE_ICE then
 										table.insert(region_coast, plotIndex);
 									end
 								end
@@ -12586,7 +12593,7 @@ function AssignStartingPlots:PlaceFishMainland(frequency, plot_list)
 					--TODO: Check feature (Atoll)
 					local featureType = res_plot:GetFeatureType()
 
-					if featureType ~= self.feature_atoll and featureType ~= FeatureTypes.FEATURE_ICE then
+					if not contains(self.feature_atoll, featureType) and featureType ~= FeatureTypes.FEATURE_ICE then
 
 						if res_plot:GetResourceType(-1) == -1 then
 							-- Placing fish here. First decide impact radius of this fish.
@@ -12764,7 +12771,7 @@ function AssignStartingPlots:PlaceSexyBonusAtCivStarts()
 						end
 						if plotType == PlotTypes.PLOT_OCEAN then
 							if not plot:IsLake() then
-								if featureType ~= self.feature_atoll and featureType ~= FeatureTypes.FEATURE_ICE then
+								if not contains(self.feature_atoll, featureType) and featureType ~= FeatureTypes.FEATURE_ICE then
 									if terrainType == TerrainTypes.TERRAIN_COAST then
 										table.insert(fish_list, plotIndex);
 									end

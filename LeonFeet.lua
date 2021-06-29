@@ -322,6 +322,10 @@ function FeatureGenerator:AdjustTerrainTypes()
 		end
 	end
 end
+
+function mod(a,b)
+	return a - math.floor(a/b)*b;
+end
 ------------------------------------------------------------------------------
 function FeatureGenerator:AddAtolls()
 	print("AddAtolls")
@@ -333,20 +337,13 @@ function FeatureGenerator:AddAtolls()
 		DirectionTypes.DIRECTION_WEST,
 		DirectionTypes.DIRECTION_NORTHWEST
 	};
-	local iW, iH = Map.GetGridSize()
-	local atollProductionId = 0;
-	local atollGoldId = 0;
-	local atoll_chance_factor = 1;
-	local relativeOdds = {
-		90,
-		90,
-		90,
-		90,
-		0,
-		0,
-	};
-	local possibleAtolls = {};
 
+	local xMod = 4;
+	local yMod = 4;
+	local oddsPerTile = 950;
+
+	local iW, iH = Map.GetGridSize()
+	local possibleAtolls = {};
 	for thisFeature in GameInfo.Features() do
 		if thisFeature.Type == "FEATURE_ATOLL" then table.insert(possibleAtolls, thisFeature.ID) end
 		if thisFeature.Type == "FEATURE_ATOLL_GOLD" then table.insert(possibleAtolls, thisFeature.ID) end
@@ -355,42 +352,24 @@ function FeatureGenerator:AddAtolls()
 		if thisFeature.Type == "FEATURE_ATOLL_SCIENCE" then table.insert(possibleAtolls, thisFeature.ID) end
 	end
 
-	for y = 0, iH - 1 do
+	for y = 10, iH - 11 do
 		for x = 0, iW - 1 do
 			repeat
-				local i = y * iW + x + 1;
-				local plot = Map.GetPlot(x, y);
+				if mod(x,xMod) ~= 0 or mod(y,yMod) ~= 0 then do break end end
+
+				local targetX = x + Map.Rand(xMod, "");
+				local targetY = y + Map.Rand(yMod, "");
+				local plot = Map.GetPlot(targetX, targetY);
 
 				-- skip most plots
 				if PlotTypes.PLOT_OCEAN ~= plot:GetPlotType() then do break end end			-- must be ocean
 				if FeatureTypes.FEATURE_ICE == plot:GetFeatureType() then do break end end 	-- cannot be ice
-				if plot:IsLake() then do break end end 										-- cannot be a lake
 				if TerrainTypes.TERRAIN_COAST ~= plot:GetTerrainType() then do break end end -- must be coast
-				if not plot:IsAdjacentToLand() then do break end end 						-- must be immediate coast
-						
-				-- Check all adjacent plots and identify adjacent landmasses.
-				local numAdjacentLand = 0;
-				local isPlotValid = true;
+				if plot:IsLake() then do break end end 										-- cannot be a lake
+				--if not plot:IsAdjacentToLand() then do break end end 						-- must be immediate coast
+				if x > iW - 1 or y > iH - 11 then do break end end 
 
-				for loop, direction in ipairs(direction_types) do
-					repeat
-						local adjPlot = Map.PlotDirection(x, y, direction);
-						if adjPlot == nil then do break end end
-						if PlotTypes.PLOT_OCEAN ~= adjPlot:GetPlotType() then -- Found land.
-							numAdjacentLand = numAdjacentLand + 1;
-							
-							local adjTerrainType = adjPlot:GetTerrainType();
-							local adjFeatureType = adjPlot:GetFeatureType();
-
-							if TerrainTypes.TERRAIN_TUNDRA == adjTerrainType then isPlotValid = false end
-							if TerrainTypes.TERRAIN_SNO == adjTerrainType then isPlotValid = false end
-							if FeatureTypes.FEATURE_ICE == adjFeatureType then isPlotValid = false end
-							if "FEATURE_ATOLL" == adjFeatureType then isPlotValid = false end -- no adjacent atolls
-						end
-					until true
-				end
-
-				if isPlotValid and Map.Rand(1000, "Atoll Chance") < relativeOdds[numAdjacentLand] * atoll_chance_factor then
+				if Map.Rand(1000, "Atoll Chance") < oddsPerTile then
 					local randIdx = 1 + Map.Rand(table.getn(possibleAtolls), "atoll random");
 					print("AddAtolls +1"..randIdx);
 					plot:SetFeatureType(possibleAtolls[randIdx], -1);
