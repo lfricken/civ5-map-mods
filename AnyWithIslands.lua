@@ -9,7 +9,7 @@
 
 include("HBMapGenerator");
 include("FractalWorld");
-include("HBFeatureGenerator");
+include("LeonFeet");
 include("HBTerrainGenerator");
 include("IslandMaker");
 include("MultilayeredFractal");
