@@ -338,9 +338,9 @@ function FeatureGenerator:AddAtolls()
 		DirectionTypes.DIRECTION_NORTHWEST
 	};
 
-	local xMod = 4;
-	local yMod = 4;
-	local oddsPerTile = 950;
+	local xMod = 3;
+	local yMod = 3;
+	local oddsPerTile = 900;
 
 	local iW, iH = Map.GetGridSize()
 	local possibleAtolls = {};
@@ -357,8 +357,8 @@ function FeatureGenerator:AddAtolls()
 			repeat
 				if mod(x,xMod) ~= 0 or mod(y,yMod) ~= 0 then do break end end
 
-				local targetX = x + Map.Rand(xMod, "");
-				local targetY = y + Map.Rand(yMod, "");
+				local targetX = x + Map.Rand(xMod - 1, "");
+				local targetY = y + Map.Rand(yMod - 1, "");
 				local plot = Map.GetPlot(targetX, targetY);
 
 				-- skip most plots
@@ -366,7 +366,7 @@ function FeatureGenerator:AddAtolls()
 				if FeatureTypes.FEATURE_ICE == plot:GetFeatureType() then do break end end 	-- cannot be ice
 				if TerrainTypes.TERRAIN_COAST ~= plot:GetTerrainType() then do break end end -- must be coast
 				if plot:IsLake() then do break end end 										-- cannot be a lake
-				--if not plot:IsAdjacentToLand() then do break end end 						-- must be immediate coast
+				if not plot:IsAdjacentToLand() then do break end end 						-- must be immediate coast
 				if x > iW - 1 or y > iH - 11 then do break end end 
 
 				if Map.Rand(1000, "Atoll Chance") < oddsPerTile then

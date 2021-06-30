@@ -66,9 +66,51 @@ AssignStartingPlots = {};
 -- for scrambled AreaID data is theoretically possible, but I have not spent
 -- development resources and time on this, directing attention to other tasks.
 
+function uranium(this)
+	local values = {1,1,1,1,2,2};
+	return values[1 + Map.Rand(6, "")];
+end
+function horses(this)
+	local values = {2,2,2,3,3,4};
+	return values[1 + Map.Rand(6, "")];
+end
+function oil(this)
+	local values = {1,2,2,3,3,4};
+	return values[1 + Map.Rand(6, "")];
+end
+function iron(this)
+	local values = {2,2,2,3,3,4};
+	return values[1 + Map.Rand(6, "")];
+end
+function coal(this)
+	local values = {3,4,5,5,6,7};
+	return values[1 + Map.Rand(6, "")];
+end
+function aluminum(this)
+	local values = {4,5,5,6,6,7};
+	return values[1 + Map.Rand(6, "")];
+end
+function getValues(this, resId)
+	if resId == this.uranium_ID then return uranium(this) end
+	if resId == this.horse_ID then return horses(this) end
+	if resId == this.oil_ID then return oil(this) end
+	if resId == this.iron_ID then return iron(this) end
+	if resId == this.coal_ID then return coal(this) end
+	if resId == this.aluminum_ID then return aluminum(this) end
+	return 1; -- most resources only have 1
+end
+function randRange(middle, range)
+	local val = Map.Rand(1 + range * 100, "Ranged Random") / 100;
+	val = val + middle - (range / 2);
+	rounded = math.floor(0.5 + val); -- round
+	return rounded;
+end
+function getResourceAmount(this, resId)
+	return getValues(this, resId);
+end
+
 ------------------------------------------------------------------------------
 function AssignStartingPlots.Create()
-	print("leon assign starting plots")
 	-- There are three methods of dividing the map in to regions.
 	-- OneLandmass, Continents, Oceanic. Default method is Continents.
 	--
@@ -561,7 +603,9 @@ function AssignStartingPlots:__Init()
 	-- Set up data tables that record whether a plot is coastal land and whether a plot is adjacent to coastal land.
 	self.plotDataIsCoastal, self.plotDataIsNextToCoast = GenerateNextToCoastalLandDataTables()
 	self.plotDataIsThreeFromCoast = GenerateThreeFromCoastTable(self.plotDataIsCoastal, self.plotDataIsNextToCoast)
-	--
+	self.resourceRanges = {};
+	self.resourceMiddles = {};
+
 	-- Set up data for resource ID shortcuts.
 	--print("########## Resource ID's ##########");
 	local csvids = "";
@@ -4698,18 +4742,16 @@ function AssignStartingPlots:AttemptToPlaceSmallStrategicAtPlot(x, y)
 			local choice = self.horse_ID;
 			local diceroll = Map.Rand(5, "Selection of Strategic Resource type - Start Normalization LUA");
 			if diceroll > 3 then
-				choice = self.iron_ID;
-				--print("Placed Iron.");
-			else
-				--print("Placed Horse.");
+				choice = self.iron_ID; --print("Placed Iron.");
+			else--print("Placed Horse.");
 			end
-			plot:SetResourceType(choice, 2);
-			self.amounts_of_resources_placed[choice + 1] = self.amounts_of_resources_placed[choice + 1] + 2;
 		else -- Can't be horses.
-			plot:SetResourceType(self.iron_ID, 2);
-			self.amounts_of_resources_placed[self.iron_ID + 1] = self.amounts_of_resources_placed[self.iron_ID + 1] + 2;
+			local choice = self.iron_ID;
 			--print("Placed Iron.");
 		end
+		local quantityToPlace = getResourceAmount(self, choice);
+		plot:SetResourceType(choice, quantityToPlace);
+		self.amounts_of_resources_placed[choice + 1] = self.amounts_of_resources_placed[choice + 1] + quantityToPlace;
 		return true
 	end
 	--print("Placement failed, feature in the way.");
@@ -9215,7 +9257,9 @@ function AssignStartingPlots:ProcessResourceList(frequency, impact_table_number,
 								res_addition = Map.Rand(res_range[use_this_res_index], "Resource Radius - Place Resource LUA");
 							end
 							--print("ProcessResourceList table 1, Resource: " .. res_ID[use_this_res_index] .. ", Quantity: " .. res_quantity[use_this_res_index]);
-							res_plot:SetResourceType(res_ID[use_this_res_index], res_quantity[use_this_res_index]);
+							local resId = res_ID[use_this_res_index];
+							res_addition = getResourceAmount(self, resId);
+							res_plot:SetResourceType(resId, res_addition);
 							if (Game.GetResourceUsageType(res_ID[use_this_res_index]) == ResourceUsageTypes.RESOURCEUSAGE_LUXURY) then
 								self.totalLuxPlacedSoFar = self.totalLuxPlacedSoFar + 1;
 							end
@@ -9235,7 +9279,9 @@ function AssignStartingPlots:ProcessResourceList(frequency, impact_table_number,
 								res_addition = Map.Rand(res_range[use_this_res_index], "Resource Radius - Place Resource LUA");
 							end
 							--print("ProcessResourceList table 2, Resource: " .. res_ID[use_this_res_index] .. ", Quantity: " .. res_quantity[use_this_res_index]);
-							res_plot:SetResourceType(res_ID[use_this_res_index], res_quantity[use_this_res_index]);
+							local resId = res_ID[use_this_res_index];
+							res_addition = getResourceAmount(self, resId);
+							res_plot:SetResourceType(resId, res_addition);
 							self:PlaceResourceImpact(x, y, impact_table_number, res_min[use_this_res_index] + res_addition);
 							placed_this_res = true;
 							self.amounts_of_resources_placed[res_ID[use_this_res_index] + 1] = self.amounts_of_resources_placed[res_ID[use_this_res_index] + 1] + 1;
@@ -9252,7 +9298,9 @@ function AssignStartingPlots:ProcessResourceList(frequency, impact_table_number,
 								res_addition = Map.Rand(res_range[use_this_res_index], "Resource Radius - Place Resource LUA");
 							end
 							--print("ProcessResourceList table 3, Resource: " .. res_ID[use_this_res_index] .. ", Quantity: " .. res_quantity[use_this_res_index]);
-							res_plot:SetResourceType(res_ID[use_this_res_index], res_quantity[use_this_res_index]);
+							local resId = res_ID[use_this_res_index];
+							res_addition = getResourceAmount(self, resId);
+							res_plot:SetResourceType(resId, res_addition);
 							self:PlaceResourceImpact(x, y, impact_table_number, res_min[use_this_res_index] + res_addition);
 							placed_this_res = true;
 							self.amounts_of_resources_placed[res_ID[use_this_res_index] + 1] = self.amounts_of_resources_placed[res_ID[use_this_res_index] + 1] + 1;
@@ -9306,7 +9354,9 @@ function AssignStartingPlots:ProcessResourceList(frequency, impact_table_number,
 					res_addition = Map.Rand(res_range[use_this_res_index], "Resource Radius - Place Resource LUA");
 				end
 				--print("ProcessResourceList backup, Resource: " .. res_ID[use_this_res_index] .. ", Quantity: " .. res_quantity[use_this_res_index]);
-				res_plot:SetResourceType(res_ID[use_this_res_index], res_quantity[use_this_res_index]);
+				local resId = res_ID[use_this_res_index];
+				res_addition = getResourceAmount(self, resId);
+				res_plot:SetResourceType(resId, res_addition);
 				self:PlaceResourceImpact(x, y, impact_table_number, res_min[use_this_res_index] + res_addition);
 				self.amounts_of_resources_placed[res_ID[use_this_res_index] + 1] = self.amounts_of_resources_placed[res_ID[use_this_res_index] + 1] + res_quantity[use_this_res_index];
 			end
@@ -9315,7 +9365,8 @@ function AssignStartingPlots:ProcessResourceList(frequency, impact_table_number,
 end
 ------------------------------------------------------------------------------
 function AssignStartingPlots:PlaceSpecificNumberOfResources(resource_ID, quantity, amount,
-	                         ratio, impact_table_number, min_radius, max_radius, plot_list)
+	                         ratio, impact_table_number, min_radius, max_radius, plot_list, extra_resource_per)
+	extra_resource_per = extra_resource_per or 0;
 	-- This function needs to receive seven numbers and one table.
 	--
 	-- Resource_ID is the type of resource to place.
@@ -9375,8 +9426,9 @@ function AssignStartingPlots:PlaceSpecificNumberOfResources(resource_ID, quantit
 				local y = (plotIndex - x - 1) / iW;
 				local res_plot = Map.GetPlot(x, y)
 				if res_plot:GetResourceType(-1) == -1 then -- Placing this resource in this plot.
-					res_plot:SetResourceType(resource_ID, quantity);
-					self.amounts_of_resources_placed[resource_ID + 1] = self.amounts_of_resources_placed[resource_ID + 1] + quantity;
+					local quant = getResourceAmount(self, resource_ID) + extra_resource_per;
+					res_plot:SetResourceType(resource_ID, quant);
+					self.amounts_of_resources_placed[resource_ID + 1] = self.amounts_of_resources_placed[resource_ID + 1] + quant;
 					--print("-"); print("Placed Resource#", resource_ID, "at Plot", x, y);
 					self.totalLuxPlacedSoFar = self.totalLuxPlacedSoFar + 1;
 					iNumLeftToPlace = iNumLeftToPlace - 1;
@@ -12549,10 +12601,12 @@ function AssignStartingPlots:PlaceSmallQuantitiesOfStrategics(frequency, plot_li
 							if strat_radius > 2 then
 								strat_radius = 1;
 							end
-							res_plot:SetResourceType(selected_ID, selected_quantity);
+							local placedQuantity = getResourceAmount(self, selected_ID); --selected_quantity;
+
+							res_plot:SetResourceType(selected_ID, placedQuantity);
 							self:PlaceResourceImpact(x, y, 1, strat_radius);
 							placed_this_res = true;
-							self.amounts_of_resources_placed[selected_ID + 1] = self.amounts_of_resources_placed[selected_ID + 1] + selected_quantity;
+							self.amounts_of_resources_placed[selected_ID + 1] = self.amounts_of_resources_placed[selected_ID + 1] + placedQuantity;
 						end
 					end
 				end
@@ -13066,7 +13120,7 @@ function AssignStartingPlots:PlaceOilInTheSea()
 	print("+++++++++++++++++++++++++++++++++++++++++++++ Adding Oil resources to the Sea +++++++++++++++++++++++++++++++++++++++++++++");
 	print("Land Oil Count: " .. tostring(iNumLandOilUnits));
 	print("Number to Place: " .. tostring(iNumToPlace));
-	iNumLeftToPlace = self:PlaceSpecificNumberOfResources(self.oil_ID, sea_oil_amt, iNumToPlace, 1, 8, 7, 10, self.coast_list);
+	iNumLeftToPlace = self:PlaceSpecificNumberOfResources(self.oil_ID, sea_oil_amt, iNumToPlace, 1, 8, 7, 10, self.coast_list, 1);
 	print("Number not Placed: " .. tostring(iNumLeftToPlace));
 end
 ------------------------------------------------------------------------------
@@ -13349,28 +13403,28 @@ end
 function AssignStartingPlots:GetMajorStrategicResourceQuantityValues()
 	-- This function determines quantity per tile for each strategic resource's major deposit size.
 	-- Note: scripts that cannot place Oil in the sea need to increase amounts on land to compensate.
-	local uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 2, 4, 7, 6, 7, 8;
+	local uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 1, 2, 3, 3, 3, 5; -- Uran, Horse, Oil,   Iron, Coal, Alum
 	-- Check the resource setting.
 	if self.resource_setting == 1 or self.resource_setting == 2 then -- Sparse
-		uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 2, 2, 5, 4, 5, 6;
+		uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 1, 1, 2, 2, 3, 4;
 	elseif self.resource_setting == 3 then -- mediocre
-		uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 2, 3, 6, 5, 6, 7;
+		uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 1, 2, 3, 2, 4, 4; -- 
 	elseif self.resource_setting == 7 then -- plenty
-		uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 2, 5, 8, 7, 8, 9;
+		uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 1, 3, 5, 4, 5, 6;
 	elseif self.resource_setting == 8 or self.resource_setting == 9 or self.resource_setting == 10 then -- Abundant
-		uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 2, 6, 9, 8, 9, 10;
+		uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 1, 4, 6, 4, 5, 6;
 	end
 	return uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt
 end
 ------------------------------------------------------------------------------
 function AssignStartingPlots:GetSmallStrategicResourceQuantityValues()
 	-- This function determines quantity per tile for each strategic resource's small deposit size.
-	local uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 2, 2, 4, 2, 3, 3;
+	local uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 1, 2, 1, 1, 1, 1;
 	-- Check the resource setting.
 	if self.resource_setting == 1 or self.resource_setting == 2 or self.resource_setting == 3 then -- Sparse / Mediocre
 		uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 1, 1, 2, 1, 2, 2;
 	elseif self.resource_setting == 7 or self.resource_setting == 8 or self.resource_setting == 9 or self.resource_setting == 10 then -- Plenty / Abundant
-		uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 2, 3, 3, 3, 3, 3;
+		uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt = 2, 3, 4, 3, 4, 4;
 	end
 	return uran_amt, horse_amt, oil_amt, iron_amt, coal_amt, alum_amt
 end
