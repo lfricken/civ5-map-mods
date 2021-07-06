@@ -63,7 +63,7 @@ function GetMapScriptInfo()
 			},
 
 			{
-				Name = "Exact Sea Level",--  (4)
+				Name = "Sea Level",--  (4)
 				Values = {
 					"50", -- 1
 					"52",
@@ -89,7 +89,7 @@ function GetMapScriptInfo()
 					"92", --30
 				},
 
-				DefaultValue = 14,
+				DefaultValue = 13,
 				SortPriority = -160,
 			},
 
@@ -233,7 +233,7 @@ function GetMapScriptInfo()
 					"128 (Huge)",
 				},
 
-				DefaultValue = 21,
+				DefaultValue = 23,
 				SortPriority = -89,
 			},
 
@@ -273,7 +273,7 @@ function GetMapScriptInfo()
 					"80 (Huge)",
 				},
 
-				DefaultValue = 16,
+				DefaultValue = 20,
 				SortPriority = -88,
 			},
 
@@ -349,9 +349,9 @@ function GetMapScriptInfo()
 					"22",
 					"24",
 					"26",
-					"28",
-					"30",
-					"32", --16
+					"28", --15
+					"30", --16
+					"32",
 					"34",
 					"36",
 					"38",
@@ -409,10 +409,10 @@ function GetMapScriptInfo()
 					"(0.30^Size)%",
 					"(0.40^Size)%",
 					"(0.50^Size)%",
-					"(0.75^Size)%",
-					"(0.82^Size)%", -- 3
+					"(0.75^Size)%", -- 4
+					"(0.82^Size)%", -- 5
 					"(0.86^Size)%",
-					"(0.88^Size)%", -- 5
+					"(0.88^Size)%", -- 7
 					"(0.90^Size)%",
 					"(0.91^Size)%",
 					"(0.92^Size)%",
@@ -420,7 +420,7 @@ function GetMapScriptInfo()
 					"(0.99^Size)%",
 				},
 
-				DefaultValue = 3,
+				DefaultValue = 4,
 				SortPriority = -55,
 			},
 		},
@@ -493,7 +493,7 @@ function GeneratePlotTypes()
 	local sea = Map.GetCustomOption(4)
 	local maxX = Map.GetCustomOption(11)*2+28; -- get map x size
 	local maxY = Map.GetCustomOption(12)*2+18; -- get map y size
-	local islandSizeMin = 1;
+	local islandSizeMin = 2;
 	local islandSizeMax = Map.GetCustomOption(18)*2-1;
 	local islandChance = Map.GetCustomOption(17)*2; -- chance in 1000 that an island will start generating (Standard size does 4000 checks)
 	local polesIslandChance = islandChance / 2; -- chance in 1000 that an island will start generating in polar region
@@ -523,6 +523,7 @@ function GeneratePlotTypes()
 
 	-- generate using primary continent algorithm
 	local plotTypes = fractal_world:GeneratePlotTypes(args);
+	--local x = fractal_world:Plots();
 
 	-- add random islands
 	for x = 0, maxX - 1 do
